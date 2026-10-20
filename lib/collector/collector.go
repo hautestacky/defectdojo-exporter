@@ -165,17 +165,10 @@ func CollectMetrics(link, token string, concurrency int, interval time.Duration,
 		}
 		wg.Wait()
 
-		select {
-		case <-ticker.C:
-			// procced
-		default:
-			// If iteration took longer than interval, drain one tick if available
-			// to avoid backlog and proceeed immediately
-			select {
-			case <-ticker.C:
-			default:
-			}
-		}
+		// Block until the next tick. A time.Ticker buffers at most one tick and
+		// drops the rest, so a pass slower than the interval starts the next one
+		// right away without building up a backlog.
+		<-ticker.C
 	}
 }
 
